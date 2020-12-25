@@ -1,3 +1,5 @@
+use std::fs::create_dir;
+
 use clap::clap_app;
 
 pub mod common;
@@ -32,10 +34,14 @@ fn main() {
         pack::pack(folder, output);
     } else if let Some(matches) = matches.subcommand_matches("unpack") {
         let cball = matches.value_of("CBALL").expect("Failed to get CBall name");
-        let output = matches
-            .value_of("OUTPUT")
-            .map(String::from)
-            .unwrap_or(format!("{}_unpacked", cball));
+        let output = match matches.value_of("OUTPUT").map(String::from) {
+            Some(s) => s,
+            None => {
+                let folder = format!("{}_unpacked", cball);
+                create_dir(&folder).expect("Failed to create output directory");
+                folder
+            }
+        };
 
         unpack::unpack(cball, output);
     }

@@ -1,4 +1,10 @@
-use std::{fs::File, io::Read, mem, path::Path, ptr};
+use std::{
+    fs::{create_dir, File},
+    io::Read,
+    mem,
+    path::Path,
+    ptr,
+};
 
 use crate::common::{FileLen, EOT, NULL};
 
@@ -17,7 +23,7 @@ fn fromdata<T>(bytes: &[u8]) -> T {
     }
 }
 
-pub fn unpack<P0: AsRef<Path>, P1: AsRef<Path>>(cball: P0, _output: P1) {
+pub fn unpack<P0: AsRef<Path>, P1: AsRef<Path>>(cball: P0, output: P1) {
     let buff = {
         let mut file = File::open(cball).expect("Failed to open file");
         let mut buff = Vec::new();
@@ -29,13 +35,17 @@ pub fn unpack<P0: AsRef<Path>, P1: AsRef<Path>>(cball: P0, _output: P1) {
     // reading header
 
     // reading folder header
-    let fend = find(&buff, 0, &EOT);
+    let mut fend = find(&buff, 0, &EOT);
     let folders = {
         let mut folders = Vec::new();
         let mut s = 0;
         let mut f = find(&buff, 0, &NULL);
         while s < fend {
-            folders.push(std::str::from_utf8(&buff[s..f]).expect("Failed to read non-utf8 string"));
+            folders.push(
+                std::str::from_utf8(&buff[s..f])
+                    .expect("Failed to read non-utf8 string")
+                    .as_ref() as &Path,
+            );
             s = f + 1;
             f = find(&buff, s, &NULL);
         }
@@ -49,9 +59,11 @@ pub fn unpack<P0: AsRef<Path>, P1: AsRef<Path>>(cball: P0, _output: P1) {
         let mut s = fend + 1;
         let mut f = find(&buff, s, &NULL);
 
-        let fend = find(&buff, fend + 1, &EOT);
+        fend = find(&buff, fend + 1, &EOT);
         while s < fend {
-            let name = std::str::from_utf8(&buff[s..f]).expect("Failed to read non-utf8 string");
+            let name = std::str::from_utf8(&buff[s..f])
+                .expect("Failed to read non-utf8 string")
+                .as_ref() as &Path;
             let pos = {
                 s = f + 1;
                 f = s + mem::size_of::<FileLen>();
@@ -64,8 +76,15 @@ pub fn unpack<P0: AsRef<Path>, P1: AsRef<Path>>(cball: P0, _output: P1) {
         files
     };
 
-    println!("Folders: {:?}", folders);
-    println!("Files: {:?}", files);
+    let _filesdata = &buff[fend + 1..];
+
+    // folder creation
+    let output = output.as_ref().to_owned();
+    for folder in folders {
+        let mut path = output.clone();
+        path.push(folder);
+        create_dir(path).expect("Failed to create folder");
+    }
 
     todo!()
 }
