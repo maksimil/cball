@@ -1,10 +1,15 @@
-use std::{fs::File, io::Read, path::PathBuf};
+use std::{fs::File, io::Read, mem::size_of, path::PathBuf};
 
 #[derive(Debug)]
 pub struct FileData {
     pub path: PathBuf,
     pub data: Vec<u8>,
 }
+
+pub const NULL: u8 = 0;
+pub const EOT: u8 = 4;
+
+pub type FileLen = u32;
 
 impl FileData {
     pub fn new(path: PathBuf, path_stripped: PathBuf) -> FileData {
@@ -19,8 +24,8 @@ impl FileData {
         }
     }
 
-    pub fn size(&self) -> u32 {
+    pub fn size(&self) -> FileLen {
         // size in cball (data with size hint)
-        self.data.len() as u32 + 4
+        (self.data.len() + size_of::<FileLen>()) as FileLen
     }
 }

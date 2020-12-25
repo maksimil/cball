@@ -2,6 +2,7 @@ use clap::clap_app;
 
 pub mod common;
 pub mod pack;
+pub mod unpack;
 
 fn main() {
     let matches = clap_app!(cball =>
@@ -16,7 +17,7 @@ fn main() {
             (@subcommand unpack =>
                 (about: "Unpacks a folder from a CBall")
                 (@arg CBALL: +required "CBall that will be unpacked")
-                (@arg OUTPUT: -o "Folder to where cball will be unpacked (defaults to <CBALL>)unpacked)"))
+                (@arg OUTPUT: -o "Folder to where cball will be unpacked (defaults to <CBALL>_unpacked)"))
         )
     .get_matches();
 
@@ -29,5 +30,13 @@ fn main() {
             .map(String::from)
             .unwrap_or(format!("{}.cball", folder));
         pack::pack(folder, output);
+    } else if let Some(matches) = matches.subcommand_matches("unpack") {
+        let cball = matches.value_of("CBALL").expect("Failed to get CBall name");
+        let output = matches
+            .value_of("OUTPUT")
+            .map(String::from)
+            .unwrap_or(format!("{}_unpacked", cball));
+
+        unpack::unpack(cball, output);
     }
 }

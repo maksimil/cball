@@ -6,7 +6,7 @@ use std::{
     slice,
 };
 
-use crate::common::FileData;
+use crate::common::{FileData, EOT, NULL};
 
 type FileFoldAcc = (Vec<PathBuf>, Vec<FileData>);
 
@@ -61,9 +61,9 @@ pub fn pack<P0: AsRef<Path>, P1: AsRef<Path>>(folder: P0, output: P1) {
     let mut file = File::create(output).expect("Failed to create output file");
     for pb in folders {
         file.write(pb.to_string_lossy().as_bytes()).expect(FWE);
-        file.write(&[0]).expect(FWE);
+        file.write(&[NULL]).expect(FWE);
     }
-    file.write(&[0]).expect(FWE);
+    file.write(&[EOT]).expect(FWE);
 
     // write files header
     for (filedata, pos) in files.iter().zip(
@@ -73,11 +73,18 @@ pub fn pack<P0: AsRef<Path>, P1: AsRef<Path>>(folder: P0, output: P1) {
             Some(*acc - item.size())
         }),
     ) {
-        file.write(filedata.path.to_string_lossy().as_bytes())
-            .expect(FWE);
-        file.write(&[0]).expect(FWE);
+        file.write(
+            filedata
+                .path
+                .to_str()
+                .expect("Non-utf8 strings are not supported")
+                .as_bytes(),
+        )
+        .expect(FWE);
+        file.write(&[NULL]).expect(FWE);
         file.write(dataof(&pos)).expect(FWE);
     }
+    file.write(&[EOT]).expect(FWE);
 
     // write file data
     for filedata in files {
