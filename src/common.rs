@@ -2,8 +2,8 @@ use std::{fs::File, io::Read, path::PathBuf};
 
 #[derive(Debug)]
 pub struct FileData {
-    path: PathBuf,
-    data: Vec<u8>,
+    pub path: PathBuf,
+    pub data: Vec<u8>,
 }
 
 impl FileData {
@@ -17,5 +17,10 @@ impl FileData {
             path: path_stripped,
             data,
         }
+    }
+
+    pub fn size(&self) -> u32 {
+        // size in cball (data with size hint)
+        self.data.len() as u32 + 4
     }
 }
