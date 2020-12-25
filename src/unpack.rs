@@ -1,6 +1,6 @@
 use std::{
     fs::{create_dir, File},
-    io::Read,
+    io::{Read, Write},
     mem,
     path::Path,
     ptr,
@@ -69,14 +69,14 @@ pub fn unpack<P0: AsRef<Path>, P1: AsRef<Path>>(cball: P0, output: P1) {
                 f = s + mem::size_of::<FileLen>();
                 fromdata::<FileLen>(&buff[s..f])
             };
-            files.push((name, pos));
+            files.push((name, pos as usize));
             s = f;
             f = find(&buff, s, &NULL);
         }
         files
     };
 
-    let _filesdata = &buff[fend + 1..];
+    let filesdata = &buff[fend + 1..];
 
     // folder creation
     let output = output.as_ref().to_owned();
@@ -86,5 +86,17 @@ pub fn unpack<P0: AsRef<Path>, P1: AsRef<Path>>(cball: P0, output: P1) {
         create_dir(path).expect("Failed to create folder");
     }
 
-    todo!()
+    // file creation
+    for (fpath, point) in files {
+        let mut path = output.clone();
+        path.push(fpath);
+
+        let s = point + mem::size_of::<FileLen>();
+        let buflen: usize =
+            fromdata::<FileLen>(&filesdata[point..s]) as usize - mem::size_of::<FileLen>();
+        let buf = &filesdata[s..s + buflen];
+
+        let mut file = File::create(path).expect("Failed to create file");
+        file.write_all(buf).expect("Failed to write file");
+    }
 }
