@@ -1,5 +1,8 @@
 use clap::clap_app;
 
+pub mod common;
+pub mod pack;
+
 fn main() {
     let matches = clap_app!(cball =>
             (version: "0.1.0")
@@ -16,4 +19,15 @@ fn main() {
                 (@arg OUTPUT: -o "Folder to where cball will be unpacked (defaults to <CBALL>)unpacked)"))
         )
     .get_matches();
+
+    if let Some(matches) = matches.subcommand_matches("pack") {
+        let folder = matches
+            .value_of("FOLDER")
+            .expect("Failed to get folder name");
+        let output = matches
+            .value_of("OUTPUT")
+            .map(String::from)
+            .unwrap_or(format!("{}.cball", folder));
+        pack::pack(folder, output);
+    }
 }
