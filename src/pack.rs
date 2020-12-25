@@ -78,4 +78,10 @@ pub fn pack<P0: AsRef<Path>, P1: AsRef<Path>>(folder: P0, output: P1) {
         file.write(&[0]).expect(FWE);
         file.write(dataof(&pos)).expect(FWE);
     }
+
+    // write file data
+    for filedata in files {
+        file.write(dataof(&filedata.size())).expect(FWE);
+        file.write(&filedata.data).expect(FWE);
+    }
 }
